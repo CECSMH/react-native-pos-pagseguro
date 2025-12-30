@@ -1,0 +1,17 @@
+{
+  "cxxNamespace": ["pospagseguro"],
+  "ios": {
+    "iosModuleName": "PosPagseguro"
+  },
+  "android": {
+    "androidNamespace": ["pospagseguro"],
+    "androidCxxLibName": "pospagseguro"
+  },
+  "autolinking": {
+    "PosPagseguro": {
+      "swift": "PosPagseguro",
+      "kotlin": "PosPagseguro"
+    }
+  },
+  "ignorePaths": ["node_modules"]
+}
