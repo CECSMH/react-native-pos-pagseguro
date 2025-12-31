@@ -14,6 +14,7 @@ class PosPagseguroPackage : BaseReactPackage() {
         return ReactModuleInfoProvider { HashMap() }
     }
 
+
     companion object {
         init {
             System.loadLibrary("pospagseguro")

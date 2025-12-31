@@ -6,11 +6,11 @@ buildscript {
   repositories {
     google()
     mavenCentral()
+    maven { url 'https://github.com/pagseguro/PlugPagServiceWrapper/raw/master' }
   }
 
   dependencies {
     classpath "com.android.tools.build:gradle:8.7.2"
-    // noinspection DifferentKotlinGradleVersion
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion')}"
   }
 }
@@ -21,6 +21,7 @@ def reactNativeArchitectures() {
 }
 
 apply plugin: "com.android.library"
+apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "kotlin-android"
 apply from: '../nitrogen/generated/android/pospagseguro+autolinking.gradle'
 
@@ -117,12 +118,15 @@ android {
 repositories {
   mavenCentral()
   google()
+  maven { url 'https://github.com/pagseguro/PlugPagServiceWrapper/raw/master' }
 }
 
 def kotlin_version = getExtOrDefault("kotlinVersion")
 
 dependencies {
+  implementation(fileTree(dir: "libs", include: ["*.jar", "*.aar"]))
   implementation "com.facebook.react:react-android"
+
   implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
   implementation project(":react-native-nitro-modules")
 }
