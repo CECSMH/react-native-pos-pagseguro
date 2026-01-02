@@ -1,105 +1,218 @@
-import React, { useEffect, useRef, useState } from 'react';
+// App.tsx
+import React, { useEffect, useState } from 'react';
 import {
+  ScrollView,
   View,
   Text,
   Button,
   Alert,
-  ScrollView,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import NitroModules from 'react-native-nitro-modules';
 
-// Import your types
-import { InstallmentTypes, PaymentTypes, type PaymentData } from 'react-native-pos-pagseguro';
+import PagSeguro, { PaymentTypes, InstallmentTypes } from 'react-native-pos-pagseguro';
+
+const ACTIVATION_CODE = '749879'; // Substitua pelo seu código real
 
 export default function App() {
-  const [status, setStatus] = useState<string>('Não inicializado');
-  const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<string[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
+  const [deviceInfo, setDeviceInfo] = useState<{
+    model: string;
+    serial: string;
+    authenticated: boolean;
+    capabilities: string[];
+  } | null>(null);
 
-  // Create the hybrid object once
-  const posPagseguro = useRef<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState<any>(null);
+  const [subAcquirer, setSubAcquirer] = useState<any>(null);
 
   useEffect(() => {
+    checkDeviceStatus();
   }, []);
 
-  const initialize = async () => {
-    if (!posPagseguro.current) return;
+  const checkDeviceStatus = async () => {
+    setIsBusy(PagSeguro.is_busy());
+    const authenticated = PagSeguro.is_authenticated();
 
-    setLoading(true);
-    setStatus('Inicializando terminal...');
-    setMessages([]);
+    const capabilities = [];
+    if (PagSeguro.capabilities.has_bluetooth()) capabilities.push('Bluetooth');
+    if (PagSeguro.capabilities.has_icc()) capabilities.push('Chip (ICC)');
+    if (PagSeguro.capabilities.has_mag()) capabilities.push('Tarja Magnética');
+    if (PagSeguro.capabilities.has_picc()) capabilities.push('Contactless (NFC)')
+    if (PagSeguro.capabilities.has_printer()) capabilities.push('Impressora');
+
+    setDeviceInfo({
+      model: PagSeguro.get_model(),
+      serial: PagSeguro.get_serial_number(),
+      authenticated,
+      capabilities,
+    });
 
     try {
-      await posPagseguro.current?.initialize('SEU_CODIGO_DE_ATIVACAO_AQUI');
-      setStatus('Terminal ativado com sucesso!');
-      Alert.alert('Sucesso', 'Terminal PagSeguro ativado!');
-    } catch (error: any) {
-      setStatus('Falha na ativação');
-      Alert.alert('Erro', error.message || 'Não foi possível ativar o terminal');
+      const data = PagSeguro.get_userdata();
+      setUserData(data);
+    } catch (error) {
+      console.warn('Não foi possível obter os dados do usuário');
+      setUserData(null);
+    }
+
+    try {
+      const sub = PagSeguro.get_sub_acquirer_data();
+      console.log(sub)
+      setSubAcquirer(sub);
+    } catch (error) {
+      setSubAcquirer(null);
+    }
+  };
+
+  const initializePOS = async () => {
+    setLoading(true);
+    try {
+      PagSeguro.initialize(ACTIVATION_CODE);
+      setIsInitialized(true);
+      Alert.alert('Sucesso', 'Terminal inicializado com sucesso!');
+      checkDeviceStatus();
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao inicializar o terminal PagSeguro');
+      console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const startPayment = async () => {
-    if (!posPagseguro.current) {
-      Alert.alert('Erro', 'Módulo não inicializado');
+  const performPayment = async () => {
+    if (!isInitialized) {
+      Alert.alert('Atenção', 'É necessário inicializar o terminal primeiro');
+      return;
+    }
+
+    if (PagSeguro.is_busy()) {
+      Alert.alert('Ocupado', 'O terminal está processando outra operação');
       return;
     }
 
     setLoading(true);
-    setStatus('Iniciando pagamento...');
-    setMessages(['Aproxime, insira ou passe o cartão']);
-
-    const paymentData: PaymentData = {
-      type: PaymentTypes.CREDIT, // or 'DEBIT', 'PIX_QR_CODE'
-      amount: 10.50, // R$ 10,50
-      installment_type: InstallmentTypes.NO_INSTALLMENT, // or SELLER_INSTALLMENT, BUYER_INSTALLMENT
-      installments: 1,
-      print_receipt: true,
-      user_reference: +Math.random().toString(36).substring(7), // optional ID
-    };
 
     try {
-      await posPagseguro.current.doPayment(paymentData);
-      setStatus('Processando pagamento...');
+      const d = await PagSeguro.do_payment({
+        amount: 1000, // R$ 10,00 (valor em centavos)
+        type: PaymentTypes.CREDIT,
+        installment_type: InstallmentTypes.SELLER_INSTALLMENT,
+        installments: 1,
+        print_receipt: true,
+        user_reference: 300
+      });
+      console.log(d)
+
+      Alert.alert('Sucesso', 'Pagamento realizado com sucesso!');
     } catch (error: any) {
+      Alert.alert('Falha no pagamento', error?.message || 'Erro desconhecido');
+      console.error(error);
+    } finally {
       setLoading(false);
-      setStatus('Erro ao iniciar');
-      Alert.alert('Erro', error.message || 'Falha ao iniciar pagamento');
+      checkDeviceStatus();
+    }
+  };
+
+  const deactivatePOS = async () => {
+    setLoading(true);
+    try {
+      await PagSeguro.deactivate();
+      setIsInitialized(false);
+      Alert.alert('Desativado', 'Terminal desativado com sucesso');
+    } catch (error) {
+      Alert.alert('Erro', 'Falha ao desativar');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>PagSeguro POS</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.title}>PagSeguro POS Demo</Text>
 
-      <Text style={styles.status}>Status: {status}</Text>
+        {loading && <ActivityIndicator size="large" color="#00b259" style={styles.loader} />}
 
-      <View style={styles.buttonContainer}>
-        <Button title="Ativar Terminal" onPress={initialize} disabled={loading} />
-        <View style={styles.gap} />
-        <Button
-          title="Realizar Pagamento (R$ 10,50)"
-          onPress={startPayment}
-          disabled={loading || status !== 'Terminal ativado com sucesso!'}
-        />
-      </View>
+        {deviceInfo && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Informações do Terminal</Text>
+            <Text>• Modelo: {deviceInfo.model}</Text>
+            <Text>• Serial: {deviceInfo.serial}</Text>
+            <Text>• Autenticado: {deviceInfo.authenticated ? 'Sim' : 'Não'}</Text>
+            <Text style={styles.subtitle}>Recursos disponíveis:</Text>
+            {deviceInfo.capabilities.length > 0 ? (
+              deviceInfo.capabilities.map((cap) => (
+                <Text key={cap}>   ◦ {cap}</Text>
+              ))
+            ) : (
+              <Text>   Nenhum recurso detectado</Text>
+            )}
+          </View>
+        )}
 
-      {loading && <ActivityIndicator size="large" color="#0E4772" style={styles.loader} />}
+        {/* Dados do Usuário / Estabelecimento */}
+        {userData && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Dados do Estabelecimento</Text>
+            {userData.company_name && <Text>• Razão Social: {userData.company_name}</Text>}
+            {userData.nick_name && <Text>• Nome Fantasia: {userData.nick_name}</Text>}
+            {userData.cnpj_cpf && <Text>• CPF/CNPJ: {userData.cnpj_cpf}</Text>}
+            {userData.email && <Text>• E-mail: {userData.email}</Text>}
+            {userData.address && <Text>• Endereço: {userData.address}</Text>}
+            {userData.address_complement && <Text>• Complemento: {userData.address_complement}</Text>}
+            {userData.city && userData.address_state && (
+              <Text>• Cidade/UF: {userData.city} - {userData.address_state}</Text>
+            )}
+            {Object.keys(userData).length === 0 && <Text>Nenhum dado disponível</Text>}
+          </View>
+        )}
 
-      {messages.length > 0 && (
-        <ScrollView style={styles.messagesContainer}>
-          <Text style={styles.messagesTitle}>Mensagens do terminal:</Text>
-          {messages.map((msg, i) => (
-            <Text key={i} style={styles.message}>
-              {msg}
-            </Text>
-          ))}
-        </ScrollView>
-      )}
+        {!userData && deviceInfo?.authenticated && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Dados do Estabelecimento</Text>
+            <Text style={{ color: '#666' }}>Nenhum dado de usuário retornado</Text>
+          </View>
+        )}
+
+        {subAcquirer && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Dados do Estabelecimento (SubAcquirer)</Text>
+            {subAcquirer.full_name && <Text>• Nome Completo: {subAcquirer.full_name}</Text>}
+            {subAcquirer.name && <Text>• Nome: {subAcquirer.name}</Text>}
+            {subAcquirer.cnpj_cpf && <Text>• CNPJ/CPF: {subAcquirer.cnpj_cpf}</Text>}
+            {subAcquirer.doc_type && <Text>• Tipo Doc: {subAcquirer.doc_type}</Text>}
+            {subAcquirer.mcc && <Text>• MCC: {subAcquirer.mcc}</Text>}
+            {subAcquirer.merchant_id && <Text>• ID Merchant: {subAcquirer.merchant_id}</Text>}
+            {subAcquirer.address && <Text>• Endereço: {subAcquirer.address}</Text>}
+            {subAcquirer.city && <Text>• Cidade: {subAcquirer.city}</Text>}
+            {subAcquirer.uf && <Text>• UF: {subAcquirer.uf}</Text>}
+            {subAcquirer.zip_code && <Text>• CEP: {subAcquirer.zip_code}</Text>}
+            {subAcquirer.telephone && <Text>• Telefone: {subAcquirer.telephone}</Text>}
+            {subAcquirer.country && <Text>• País: {subAcquirer.country}</Text>}
+          </View>
+        )}
+
+        <View style={styles.buttonContainer}>
+          <Button title="Recarregar informações" onPress={checkDeviceStatus} color="#3f0092ff" />
+          <View style={styles.buttonSpacing} />
+          {!isInitialized ? (
+            <Button title="Inicializar Terminal" onPress={initializePOS} color="#00b259" />
+          ) : (
+            <>
+              <Button title="Realizar Pagamento (R$ 10,00 Crédito)" onPress={performPayment} />
+              <View style={styles.buttonSpacing} />
+              <Button title="Desativar Terminal" onPress={deactivatePOS} color="#d32f2f" />
+            </>
+          )}
+        </View>
+
+        {isBusy && (
+          <Text style={styles.busyText}>Terminal ocupado no momento...</Text>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -107,49 +220,56 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
+  },
+  scrollContent: {
+    padding: 20,
+    flexGrow: 1,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
-    color: '#0E4772',
-  },
-  status: {
-    fontSize: 18,
-    textAlign: 'center',
     marginBottom: 30,
-    color: '#333',
-  },
-  buttonContainer: {
-    gap: 15,
-    marginBottom: 30,
-  },
-  gap: {
-    height: 10,
+    color: '#00b259',
   },
   loader: {
     marginVertical: 20,
   },
-  messagesContainer: {
-    flex: 1,
-    maxHeight: 200,
+  card: {
     backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  messagesTitle: {
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+    color: '#333',
+  },
+  subtitle: {
+    marginTop: 8,
+    fontWeight: '600',
+    color: '#555',
+  },
+  buttonContainer: {
+    gap: 14,
+    marginTop: 10,
+  },
+  buttonSpacing: {
+    height: 10,
+  },
+  busyText: {
+    textAlign: 'center',
+    color: '#d32f2f',
     fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  message: {
-    fontFamily: 'monospace',
     fontSize: 16,
-    marginVertical: 2,
+    marginTop: 20,
   },
 });

@@ -1,23 +1,23 @@
 enum PaymentTypes {
-    CREDIT = 1,
-    DEBIT = 2,
-    VOUCHER = 3,
-    PIX_QR_CODE = 5,
+  CREDIT = 1,
+  DEBIT = 2,
+  VOUCHER = 3,
+  PIX = 5,
 }
 
 enum InstallmentTypes {
-    NO_INSTALLMENT = 1,
-    SELLER_INSTALLMENT = 2,
-    BUYER_INSTALLMENT = 3,
+  NO_INSTALLMENT = 1,
+  SELLER_INSTALLMENT = 2,
+  BUYER_INSTALLMENT = 3,
 }
 
 export type PaymentData = {
-    amount: number,
-    installment_type: InstallmentTypes,
-    installments: number,
-    print_receipt?: boolean,
-    type: PaymentTypes,
-    user_reference?: number,
+  amount: number,
+  installment_type: InstallmentTypes,
+  installments: number,
+  print_receipt?: boolean,
+  type: PaymentTypes,
+  user_reference?: number,
 }
 
 export enum CardIssuerNationality {
@@ -27,7 +27,7 @@ export enum CardIssuerNationality {
 }
 
 
-export interface PlugPagTransactionResult {
+export type TransactionResult = {
   message?: string;
   error_code?: string;
   transaction_code?: string;
@@ -46,7 +46,7 @@ export interface PlugPagTransactionResult {
   label?: string;
   holder_name?: string;
   extended_holder_name?: string;
-  card_issuer_nationality?: CardIssuerNationality; 
+  card_issuer_nationality?: CardIssuerNationality;
   result?: number;
   reader_model?: string;
   nsu?: string;
@@ -72,6 +72,6 @@ export interface PlugPagTransactionResult {
 }
 
 export {
-    PaymentTypes,
-    InstallmentTypes
+  PaymentTypes,
+  InstallmentTypes
 }
