@@ -12,7 +12,6 @@ const PosPagseguroHybridObject = NitroModules.createHybridObject<PosPagseguro>('
  * PagSeguro POS SDK para React Native
  *
  * Biblioteca de alto desempenho para integração com terminais PagSeguro (Moderninha, Smart, Pro, etc.)
- * utilizando react-native-nitro-modules para comunicação nativa direta em Swift (iOS) e Kotlin (Android).
  *
  * ### Funcionalidades principais
  * - Inicialização e ativação do terminal
