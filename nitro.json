@@ -9,7 +9,6 @@
   },
   "autolinking": {
     "PosPagseguro": {
-      "swift": "PosPagseguro",
       "kotlin": "PosPagseguro"
     }
   },

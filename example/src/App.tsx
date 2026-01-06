@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -8,14 +8,16 @@ import {
   Alert,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 
-import PagSeguro, { PaymentTypes, InstallmentTypes } from 'react-native-pos-pagseguro';
+import PagSeguro, { PaymentTypes, InstallmentTypes, type TransactionResult, VoidType } from 'react-native-pos-pagseguro';
 
-const ACTIVATION_CODE = '749879'; // Substitua pelo seu código real
+const ACTIVATION_CODE = '<seu codigo aqui>'; // Substitua pelo seu código real
+const TEST_AMOUNT = 2000;
 
 export default function App() {
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState<{
     model: string;
@@ -26,7 +28,9 @@ export default function App() {
 
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState<any>(null);
+  const [process, setProcess] = useState<string>("");
   const [subAcquirer, setSubAcquirer] = useState<any>(null);
+  const [lastTransaction, setLastTransaction] = useState<TransactionResult | null>(null);
 
   useEffect(() => {
     checkDeviceStatus();
@@ -82,51 +86,98 @@ export default function App() {
     }
   };
 
-  const performPayment = async () => {
+  const performPayment = async (paymentConfig: {
+    title: string;
+    type: PaymentTypes;
+    installment_type: InstallmentTypes;
+    installments: number;
+  }) => {
     if (!isInitialized) {
-      Alert.alert('Atenção', 'É necessário inicializar o terminal primeiro');
+      Alert.alert('Atenção', 'Inicialize o terminal primeiro');
       return;
     }
-
     if (PagSeguro.is_busy()) {
-      Alert.alert('Ocupado', 'O terminal está processando outra operação');
+      Alert.alert('Ocupado', 'Aguarde a operação atual terminar');
       return;
     }
 
     setLoading(true);
-
     try {
-      const d = await PagSeguro.do_payment({
-        amount: 1000, // R$ 10,00 (valor em centavos)
-        type: PaymentTypes.CREDIT,
-        installment_type: InstallmentTypes.SELLER_INSTALLMENT,
-        installments: 1,
+      await PagSeguro.do_payment({
+        amount: TEST_AMOUNT,
+        type: paymentConfig.type,
+        installment_type: paymentConfig.installment_type,
+        user_reference: 1203,
+        installments: paymentConfig.installments,
         print_receipt: true,
-        user_reference: 300
-      });
-      console.log(d)
+      }, (msg) => {
+        setProcess(msg);
+      }).then(e => { setProcess("") });
 
-      Alert.alert('Sucesso', 'Pagamento realizado com sucesso!');
+      Alert.alert('Sucesso!', `${paymentConfig.title} realizado com sucesso!`);
     } catch (error: any) {
-      Alert.alert('Falha no pagamento', error?.message || 'Erro desconhecido');
-      console.error(error);
+      Alert.alert(
+        'Falha no Pagamento',
+        error?.message || 'Erro desconhecido ao processar pagamento'
+      );
+      console.log(error.message);
     } finally {
+      setProcess("")
       setLoading(false);
-      checkDeviceStatus();
     }
   };
 
-  const deactivatePOS = async () => {
-    setLoading(true);
+  const fetchLastTransaction = async () => {
     try {
-      await PagSeguro.deactivate();
-      setIsInitialized(false);
-      Alert.alert('Desativado', 'Terminal desativado com sucesso');
+      const transaction = PagSeguro.get_last_approved_transaction();
+      setLastTransaction(transaction);
     } catch (error) {
-      Alert.alert('Erro', 'Falha ao desativar');
-    } finally {
-      setLoading(false);
+      Alert.alert('Aviso', 'Não foi possível obter a última transação aprovada');
+      setLastTransaction(null);
     }
+  };
+
+  const voidLastPayment = async () => {
+    if (!lastTransaction) {
+      Alert.alert('Atenção', 'Não há transação aprovada para cancelar');
+      return;
+    }
+
+    if (!lastTransaction.transaction_code || !lastTransaction.transaction_id) {
+      Alert.alert('Erro', 'Dados insuficientes para cancelamento (falta transaction_code ou id)');
+      return;
+    }
+
+    Alert.alert(
+      'Confirmar Cancelamento',
+      `Deseja realmente cancelar a transação de R$ ${(parseInt(lastTransaction.amount || '0') / 100).toFixed(2)}?`,
+      [
+        { text: 'Não', style: 'cancel' },
+        {
+          text: 'Sim, Cancelar',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              await PagSeguro.void_payment({
+                transaction_code: lastTransaction.transaction_code!,
+                transaction_id: lastTransaction.transaction_id!,
+                print_receipt: true,
+                void_type: VoidType.PAYMENT, // PAYMENT (use 2 apenas se for QR Code PIX não pago)
+              }, setProcess).then(console.log);
+
+              Alert.alert('Sucesso', 'Transação cancelada com sucesso!');
+              setLastTransaction(null); // Limpa após cancelamento
+            } catch (error: any) {
+              Alert.alert('Falha no Cancelamento', error?.message || 'Erro desconhecido');
+            } finally {
+              setLoading(false);
+              setProcess('')
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -195,19 +246,183 @@ export default function App() {
           </View>
         )}
 
+        {lastTransaction && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Última Transação Aprovada</Text>
+            <Text>• Valor: R$ {(parseInt(lastTransaction.amount || '0') / 100).toFixed(2)}</Text>
+            <Text>• Bandeira: {lastTransaction.card_brand || 'PIX/Voucher'}</Text>
+            <Text>• Tipo: {lastTransaction.payment_type === 5 ? 'PIX' : lastTransaction.payment_type === 2 ? 'Débito' : 'Crédito'}</Text>
+            <Text>• Parcelas: {lastTransaction.installments || 1}x</Text>
+            <Text>• NSU: {lastTransaction.transaction_code}</Text>
+            <Text>• ID: {lastTransaction.transaction_id}</Text>
+            <Text>• Data/Hora: {lastTransaction.date} {lastTransaction.time}</Text>
+          </View>
+        )}
+
         <View style={styles.buttonContainer}>
           <Button title="Recarregar informações" onPress={checkDeviceStatus} color="#3f0092ff" />
           <View style={styles.buttonSpacing} />
+
+          {!!process && (
+            <View style={{ borderRadius: 8, borderWidth: 1, borderColor: 'red', padding: 3 }}>
+              <Text style={{ color: 'red', fontSize: 18 }}>{process}</Text>
+            </View>
+          )}
+          {isInitialized && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Testar Pagamentos (R$ 20,00)</Text>
+
+              <View style={styles.paymentGrid}>
+                {/* Crédito à vista */}
+                <TouchableOpacity
+                  style={[styles.paymentButton, { backgroundColor: '#0066cc' }]}
+                  onPress={() =>
+                    performPayment({
+                      title: 'Crédito à Vista',
+                      type: PaymentTypes.CREDIT,
+                      installment_type: InstallmentTypes.NO_INSTALLMENT,
+                      installments: 1,
+                    })
+                  }
+                >
+                  <Text style={styles.paymentButtonText}>Crédito{'\n'}À Vista</Text>
+                </TouchableOpacity>
+
+                {/* Crédito Parcelado Loja (sem juros) */}
+                <TouchableOpacity
+                  style={[styles.paymentButton, { backgroundColor: '#00b259' }]}
+                  onPress={() =>
+                    performPayment({
+                      title: 'Crédito 6x Sem Juros',
+                      type: PaymentTypes.CREDIT,
+                      installment_type: InstallmentTypes.SELLER_INSTALLMENT,
+                      installments: 6,
+                    })
+                  }
+                >
+                  <Text style={styles.paymentButtonText}>Crédito{'\n'}6x Loja</Text>
+                </TouchableOpacity>
+
+                {/* Crédito Parcelado Comprador (com juros) */}
+                <TouchableOpacity
+                  style={[styles.paymentButton, { backgroundColor: '#ff6b00' }]}
+                  onPress={() =>
+                    performPayment({
+                      title: 'Crédito 4x Com Juros',
+                      type: PaymentTypes.CREDIT,
+                      installment_type: InstallmentTypes.BUYER_INSTALLMENT,
+                      installments: 4,
+                    })
+                  }
+                >
+                  <Text style={styles.paymentButtonText}>Crédito{'\n'}4x Comprador</Text>
+                </TouchableOpacity>
+
+                {/* Débito */}
+                <TouchableOpacity
+                  style={[styles.paymentButton, { backgroundColor: '#d32f2f' }]}
+                  onPress={() =>
+                    performPayment({
+                      title: 'Débito',
+                      type: PaymentTypes.DEBIT,
+                      installment_type: InstallmentTypes.NO_INSTALLMENT,
+                      installments: 1,
+                    })
+                  }
+                >
+                  <Text style={styles.paymentButtonText}>Débito</Text>
+                </TouchableOpacity>
+
+                {/* Voucher */}
+                <TouchableOpacity
+                  style={[styles.paymentButton, { backgroundColor: '#9c27b0' }]}
+                  onPress={() =>
+                    performPayment({
+                      title: 'Voucher (Refeição)',
+                      type: PaymentTypes.VOUCHER,
+                      installment_type: InstallmentTypes.NO_INSTALLMENT,
+                      installments: 1,
+                    })
+                  }
+                >
+                  <Text style={styles.paymentButtonText}>Voucher{'\n'}Refeição</Text>
+                </TouchableOpacity>
+
+                {/* PIX */}
+                <TouchableOpacity
+                  style={[styles.paymentButton, { backgroundColor: '#00bfa5' }]}
+                  onPress={() =>
+                    performPayment({
+                      title: 'PIX',
+                      type: PaymentTypes.PIX,
+                      installment_type: InstallmentTypes.NO_INSTALLMENT,
+                      installments: 1,
+                    })
+                  }
+                >
+                  <Text style={styles.paymentButtonText}>PIX</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
+        <Button title="Cancelar operação" onPress={() => PagSeguro.abort_current_operation()} color="#ff4747ff" />
+
+        <View style={styles.buttonContainer}>
+          {isInitialized && (
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Ações Avançadas</Text>
+
+              <Button
+                title="Consultar Última Transação"
+                onPress={fetchLastTransaction}
+                color="#555"
+              />
+
+              <View style={styles.buttonSpacing} />
+
+              <Button
+                title="CANCELAR Última Transação"
+                onPress={voidLastPayment}
+                color="#c62828"
+                disabled={!lastTransaction}
+              />
+            </View>
+          )}
+
           {!isInitialized ? (
             <Button title="Inicializar Terminal" onPress={initializePOS} color="#00b259" />
           ) : (
             <>
-              <Button title="Realizar Pagamento (R$ 10,00 Crédito)" onPress={performPayment} />
+              {/*  <Button title="Reboot"
+                onPress={() => {
+                  PagSeguro.reboot();
+                }}
+                color="#f3b600ff"
+              /> */}
+
               <View style={styles.buttonSpacing} />
-              <Button title="Desativar Terminal" onPress={deactivatePOS} color="#d32f2f" />
+
+              <Button title="Reprint consumer"
+                onPress={() => {
+                  PagSeguro.reprint_customer_receipt().then((s) => console.log(`consumer: ${s} steps`))
+                }}
+                color="#0065f3ff"
+              />
+              <Button
+                title="Reprint stablishment"
+                onPress={() => {
+                  PagSeguro.reprint_stablishment_receipt().then((s) => console.log(`stablishment: ${s} steps`))
+                }}
+                color="#00f392ff"
+              />
+
+              <View style={styles.buttonSpacing} />
             </>
           )}
         </View>
+
 
         {isBusy && (
           <Text style={styles.busyText}>Terminal ocupado no momento...</Text>
@@ -235,6 +450,26 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginVertical: 20,
+  },
+  paymentGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  paymentButton: {
+    flexBasis: '30%',
+    paddingVertical: 16,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 80,
+  },
+  paymentButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 14,
   },
   card: {
     backgroundColor: '#fff',

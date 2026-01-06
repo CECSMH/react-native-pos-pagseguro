@@ -1,39 +1,193 @@
 # react-native-pos-pagseguro
 
-Integration of plugpag for React Native
+**PagSeguro POS SDK for React Native** – Integration with PagSeguro terminals (Moderninha, Moderninha2, etc.) using react-native-nitro-modules.
+
+Supports credit, debit, voucher, PIX payments, installments, cancellations, receipt printing, and more.
+[![npm version](https://badge.fury.io/js/react-native-pos-pagseguro.svg)](https://badge.fury.io/js/react-native-pos-pagseguro)
+[![Platform](https://img.shields.io/badge/platform-Android-yellow.svg)](https://www.android.com)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
+## Features
+
+- **Initialize and activate** PagSeguro terminals
+- **Payments:** Credit, Debit, Voucher, PIX
+- **Installments:** (à vista, store installment without interest, buyer installment with interest)
+- **Cancel/refund:** transactions (same-day only)
+- Get last approved transaction
+- **Reprint:** customer or merchant receipt
+- Custom image printing (file path or Base64)
+- Abort ongoing operations
+- Reboot terminal
+- **Device info:** model, serial number, user data, sub-acquirer data
+- **Capability detection:** printer, NFC, chip, magnetic stripe, etc.
+- Progress callbacks during payment flow
 
 ## Installation
 
+```bash
+npm install react-native-pos-pagseguro
+```
+## or
+```bash
+yarn add react-native-pos-pagseguro
+```
+### Post-install steps
 
-```sh
-npm install react-native-pos-pagseguro react-native-nitro-modules
+Since this library uses **react-native-nitro-modules**, you need to rebuild your app after installation:
 
-> `react-native-nitro-modules` is required as this library relies on [Nitro Modules](https://nitro.margelo.com/).
+```bash
+npx react-native run-android  
 ```
 
+
+## Requirements
+
+- **Platform**: Android only
+- React Native ≥ 0.71
+- react-native-nitro-modules ≥ 0.30 (for older RN versions)
 
 ## Usage
 
+### 1. Initialize the terminal (required first step)
 
-```js
-import { multiply } from 'react-native-pos-pagseguro';
+```typescript
+import PagSeguro from 'react-native-pos-pagseguro';
 
-// ...
-
-const result = multiply(3, 7);
+// Must be called once with your activation code provided by PagSeguro
+try {
+  PagSeguro.initialize('YOUR_ACTIVATION_CODE_HERE');
+  console.log('Terminal initialized successfully');
+} catch (error) {
+  console.error('Initialization failed:', error);
+}
 ```
 
 
+### 2. Make a payment
+```typescript
+import PagSeguro, { PaymentTypes, InstallmentTypes } from 'react-native-pos-pagseguro';
+
+try {
+  const result = await PagSeguro.do_payment({
+    amount: 1000, // R$ 10,00 (in cents)
+    type: PaymentTypes.CREDIT,
+    installment_type: InstallmentTypes.SELLER_INSTALLMENT,
+    installments: 3,
+    print_receipt: true,
+    user_reference: 12345, // optional
+  }, (statusMessage) => {
+    console.log('Progress:', statusMessage); // e.g., "APROXIME, INSIRA OU PASSE O CARTÃO"
+  });
+
+  console.log('Payment approved!', result.transaction_code, result.nsu);
+} catch (error) {
+  console.error('Payment failed:', error.code, error.message);
+}
+```
+
+
+### 3. Cancel a payment (same day only)
+```typescript
+try {
+  const cancelResult = await PagSeguro.void_payment({
+    transaction_code: '123456789',
+    transaction_id: 'ABCDEF123456',
+    print_receipt: true,
+  }, (statusMessage) => {
+    console.log('Progress:', statusMessage); // e.g., "APROXIME, INSIRA OU PASSE O CARTÃO"
+  });
+
+  console.log('Cancellation successful:', cancelResult);
+} catch (error) {
+  console.error('Cancellation failed:', error);
+}
+```
+
+
+### 4. Reprint receipts
+```typescript
+try {
+  await PagSeguro.reprint_customer_receipt();
+  console.log('Customer receipt reprinted');
+} catch (error) {
+  console.error('Print failed:', error);
+}
+```
+
+### 5. Check device capabilities
+```typescript
+if (PagSeguro.capabilities.has_printer()) {
+  console.log('This terminal has a thermal printer');
+}
+
+if (PagSeguro.capabilities.has_picc()) {
+  console.log('Supports contactless (NFC) payments');
+}
+```
+
+### 6. Get device info
+```typescript
+console.log('Model:', PagSeguro.get_model());
+console.log('Serial:', PagSeguro.get_serial_number());
+console.log('User data:', PagSeguro.get_userdata());
+```
+
+## Error Handling
+
+
+- `PaymentError` – Payment, validation, or communication issues
+- `PrintError` – Printing or reprinting failures
+- `AbordError` – Failure when trying to abort an operation
+```typescript
+try {
+  await PagSeguro.do_payment(data);
+} catch (e) {
+  if (e instanceof PaymentError) {
+    console.log('Payment error:', e.code, e.message);
+  }
+}
+```
+
+## API Reference
+
+All types and enums are fully typed. Key exports:
+
+- `PaymentData`
+- `TransactionResult`
+- `VoidPayData`
+- `PaymentTypes`
+- `InstallmentTypes`
+- `VoidType`
+- `capabilities` (object with detection methods)
+
 ## Contributing
 
-- [Development workflow](CONTRIBUTING.md#development-workflow)
-- [Sending a pull request](CONTRIBUTING.md#sending-a-pull-request)
-- [Code of conduct](CODE_OF_CONDUCT.md)
+Contributions are welcome! To contribute:
+
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/your-feature`).
+3. Commit your changes (`git commit -m 'Add your feature'`).
+4. Push to the branch (`git push origin feature/your-feature`).
+5. Open a pull request.
+
+Please include tests and update documentation as needed.
+
+## Support the Project ☕
+
+If you've found this library helpful, consider buying me a coffee!
+
+
+
+Scan the QR code to donate (Lightning⚡):
+
+![Lightning donation QR code for cecsmh@bipa.app](https://api.qrserver.com/v1/create-qr-code/?data=lightning:cecsmh@bipa.app&size=300x300&ecc=M)
+
+Thank you for your support! 🚀
 
 ## License
 
-MIT
+MIT License. See LICENSE for details.
 
----
+## Support
 
-Made with [create-react-native-library](https://github.com/callstack/react-native-builder-bob)
+For issues or questions, open an issue on the GitHub repository or contact the maintainers.

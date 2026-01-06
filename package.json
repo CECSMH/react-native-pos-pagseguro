@@ -36,7 +36,7 @@
   "scripts": {
     "example": "yarn workspace react-native-pos-pagseguro-example",
     "clean": "del-cli android/build example/android/build example/android/app/build example/ios/build lib",
-    "prepare": "bob build",
+    "prepublishOnly": "bob build",
     "nitrogen": "nitrogen",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
@@ -45,14 +45,30 @@
   },
   "keywords": [
     "react-native",
-    "ios",
-    "android"
+    "pagseguro",
+    "pos",
+    "payment",
+    "plugpag",
+    "moderninha",
+    "terminal",
+    "android",
+    "nitro-modules",
+    "pix",
+    "credit-card",
+    "debit",
+    "voucher",
+    "point-of-sale",
+    "mpos",
+    "react-native-pos",
+    "pagamento",
+    "maquininha",
+    "pagseguro-pos"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CECSMH/react-native-pos-pagseguro.git"
   },
-  "author": "CECSMH <kadu_cecs@outlook.com> (https://github.com/CECSMH)",
+  "author": "CECSMH (https://github.com/CECSMH)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/CECSMH/react-native-pos-pagseguro/issues"

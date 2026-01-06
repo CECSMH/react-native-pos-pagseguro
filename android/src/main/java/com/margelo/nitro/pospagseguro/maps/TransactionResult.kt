@@ -6,8 +6,6 @@ import br.com.uol.pagseguro.plugpagservice.wrapper.PlugPagTransactionResult
 
 fun PlugPagTransactionResult.toTransactionResult(): TransactionResult {
     return TransactionResult(
-        message = this.message,
-        error_code = this.errorCode,
         transaction_code = this.transactionCode,
         transaction_id = this.transactionId,
         date = this.date,
@@ -24,8 +22,12 @@ fun PlugPagTransactionResult.toTransactionResult(): TransactionResult {
         label = this.label,
         holder_name = this.holderName,
         extended_holder_name = this.extendedHolderName,
-        card_issuer_nationality =CardIssuerNationality.UNAVAILABLE, //this.cardIssuerNationality,
-        result = this.result?.toDouble(),
+        card_issuer_nationality = when(this.cardIssuerNationality){
+            br.com.uol.pagseguro.plugpagservice.wrapper.CardIssuerNationality.UNAVAILABLE -> CardIssuerNationality.UNAVAILABLE
+            br.com.uol.pagseguro.plugpagservice.wrapper.CardIssuerNationality.NATIONAL -> CardIssuerNationality.DOMESTIC
+            br.com.uol.pagseguro.plugpagservice.wrapper.CardIssuerNationality.INTERNATIONAL -> CardIssuerNationality.INTERNATIONAL
+            else -> CardIssuerNationality.UNAVAILABLE
+        },
         reader_model = this.readerModel,
         nsu = this.nsu,
         auto_code = this.autoCode,
