@@ -6,7 +6,6 @@ buildscript {
   repositories {
     google()
     mavenCentral()
-    maven { url 'https://github.com/pagseguro/PlugPagServiceWrapper/raw/master' }
   }
 
   dependencies {
@@ -118,7 +117,6 @@ android {
 repositories {
   mavenCentral()
   google()
-  maven { url 'https://github.com/pagseguro/PlugPagServiceWrapper/raw/master' }
 }
 
 def kotlin_version = getExtOrDefault("kotlinVersion")

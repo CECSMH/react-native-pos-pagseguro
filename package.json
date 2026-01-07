@@ -94,12 +94,9 @@
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
     "react-native-nitro-modules": "*"
-  },
-  "peerDependenciesMeta": {
-    "react-native-nitro-modules":{
-      "optional": false
-    }
   },
   "workspaces": [
     "example"

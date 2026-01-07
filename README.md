@@ -25,11 +25,11 @@ Supports credit, debit, voucher, PIX payments, installments, cancellations, rece
 ## Installation
 
 ```bash
-npm install react-native-pos-pagseguro
+npm install react-native-pos-pagseguro react-native-nitro-modules
 ```
 ## or
 ```bash
-yarn add react-native-pos-pagseguro
+yarn add react-native-pos-pagseguro react-native-nitro-modules
 ```
 ### Post-install steps
 
@@ -44,7 +44,7 @@ npx react-native run-android
 
 - **Platform**: Android only
 - React Native ≥ 0.71
-- react-native-nitro-modules ≥ 0.30 (for older RN versions)
+- react-native-nitro-modules ≥ 0.30
 
 ## Usage
 
