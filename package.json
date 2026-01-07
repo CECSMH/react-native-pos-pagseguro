@@ -96,7 +96,12 @@
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "react-native-nitro-modules": "^0.32.0"
+    "react-native-nitro-modules": "*"
+  },
+  "peerDependenciesMeta": {
+    "react-native-nitro-modules":{
+      "optional": false
+    }
   },
   "workspaces": [
     "example"
