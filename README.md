@@ -65,7 +65,7 @@ try {
 
 ### 2. Make a payment
 ```typescript
-import PagSeguro, { PaymentTypes, InstallmentTypes } from 'react-native-pos-pagseguro';
+import PagSeguro, { PaymentTypes, InstallmentTypes, PaymentEvent } from 'react-native-pos-pagseguro';
 
 try {
   const result = await PagSeguro.do_payment({
@@ -75,8 +75,14 @@ try {
     installments: 3,
     print_receipt: true,
     user_reference: 12345, // optional
-  }, (statusMessage) => {
+  }, (statusMessage, code) => {
     console.log('Progress:', statusMessage); // e.g., "APROXIME, INSIRA OU PASSE O CARTÃO"
+
+    switch(){
+      case PaymentEvent.CONTACTLESS_ERROR: console.log("Erro de leitura NFC")
+        break;
+      case PaymentEvent.USE_CHIP: console.log("Use o chip!")
+    }
   });
 
   console.log('Payment approved!', result.transaction_code, result.nsu);
@@ -93,8 +99,9 @@ try {
     transaction_code: '123456789',
     transaction_id: 'ABCDEF123456',
     print_receipt: true,
-  }, (statusMessage) => {
+  }, (statusMessage, code) => {
     console.log('Progress:', statusMessage); // e.g., "APROXIME, INSIRA OU PASSE O CARTÃO"
+    if(code == PaymentEvent.USE_CHIP) console.log("Use o chip!")
   });
 
   console.log('Cancellation successful:', cancelResult);

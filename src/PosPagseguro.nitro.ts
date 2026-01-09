@@ -1,7 +1,7 @@
 import type { HybridObject } from 'react-native-nitro-modules';
 
 import type { CustomError } from './types/exceptions';
-import type { PaymentData, TransactionResult, VoidPayData } from './types/payments';
+import type { PaymentData, PaymentEvent, TransactionResult, VoidPayData } from './types/payments';
 import type { Capabilities, SubAcquirer, UserData } from './types/device';
 
 export interface PosPagseguro extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
@@ -25,8 +25,8 @@ export interface PosPagseguro extends HybridObject<{ ios: 'swift'; android: 'kot
   hasCapability(capability: Capabilities): boolean;
   initialize(activation_code: string): void;
 
-  doPayment(payment_data: PaymentData, process_callback: (event: string) => void): Promise<TransactionResult | CustomError>;
-  voidPayment(void_data: VoidPayData, process_callback: (event: string) => void): Promise<TransactionResult | CustomError>;
+  doPayment(payment_data: PaymentData, process_callback: (event: string, code: PaymentEvent) => void): Promise<TransactionResult | CustomError>;
+  voidPayment(void_data: VoidPayData, process_callback: (event: string, code: PaymentEvent) => void): Promise<TransactionResult | CustomError>;
 
   getLastApprovedTransaction(): TransactionResult | CustomError;
 }

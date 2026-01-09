@@ -208,6 +208,132 @@ export type TransactionResult = {
   pix_tx_id_code?: string;
 }
 
+/**
+ * Eventos de pagamento
+ */
+export enum PaymentEvent {
+  /**
+   * Aguardando inserção do cartão.
+   */
+  WAITING_CARD = 0,
+  /**
+   * Cartão foi inserido no terminal.
+   */
+  INSERTED_CARD = 1,
+  /**
+   * Fim da transação (independente do resultado).
+   */
+  SALE_END = 4,
+  /**
+   * Aguardando autorização da senha.
+   */
+  AUTHORIZING = 5,
+  /**
+   * Aguardando remoção do cartão.
+   */
+  WAITING_REMOVE_CARD = 7,
+  /**
+   * Cartão foi removido do terminal.
+   */
+  REMOVED_CARD = 8,
+  /**
+   * Solicitação de digitação do PIN (senha).
+   */
+  PIN_REQUESTED = 2,
+  /**
+   * PIN (senha) digitado corretamente.
+   */
+  PIN_OK = 3,
+  /**
+   * Solicitação de CVV.
+   */
+  CVV_REQUESTED = 9,
+  /**
+   * CVV digitado corretamente.
+   */
+  CVV_OK = 10,
+  /**
+   * Solicitação de BIN do cartão.
+   */
+  CAR_BIN_REQUESTED = 11,
+  /**
+   * BIN do cartão digitado corretamente.
+   */
+  CAR_BIN_OK = 12,
+  /**
+   * Solicitação do nome do portador do cartão.
+   */
+  CAR_HOLDER_REQUESTED = 13,
+  /**
+   * Nome do portador do cartão digitado corretamente.
+   */
+  CAR_HOLDER_OK = 14,
+  /**
+   * Ativação realizada com sucesso.
+   */
+  ACTIVATION_SUCCESS = 15,
+  /**
+   * Dígito da senha foi digitado.
+   */
+  DIGIT_PASSWORD = 16,
+  /**
+   * Dígito da senha foi apagado.
+   */
+  NO_PASSWORD = 17,
+  /**
+   * Aprovada (cartão ou Pix).
+   */
+  APPROVED = 18,
+  /**
+   * Não aprovada (cartão ou Pix).
+   */
+  NOT_APPROVED = 19,
+  /**
+   * Erro de leitura em transação NFC.
+   */
+  CONTACTLESS_ERROR = 23,
+  /**
+   * Instruções exibidas no smartphone durante NFC.
+   */
+  CONTACTLESS_ON_DEVICE = 24,
+  /**
+   * Necessário usar tarja magnética.
+   */
+  USE_TARJA = 25,
+  /**
+   * Necessário usar chip.
+   */
+  USE_CHIP = 26,
+  /**
+   * Download de tabelas em andamento.
+   */
+  DOWNLOADING_TABLES = 27,
+  /**
+   * Gravação de tabelas em andamento.
+   */
+  RECORDING_TABLES = 28,
+  /**
+   * Transação concluída com sucesso.
+   */
+  SUCCESS = 29,
+  /**
+   * Resolvendo pendências de transações.
+   */
+  SOLVE_PENDINGS = 30,
+  /**
+   * Mensagem customizada enviada pelo terminal.
+   */
+  CUSTOM_MESSAGE = -1,
+  /**
+   * Evento padrão (fallback).
+   */
+  DEFAULT = -2,
+  /**
+   * Erro durante execução do evento.
+   */
+  ON_EVENT_ERROR = -3
+}
+
 export {
   VoidType,
   PaymentTypes,

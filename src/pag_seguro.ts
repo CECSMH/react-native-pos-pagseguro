@@ -1,7 +1,7 @@
 import { NitroModules } from "react-native-nitro-modules";
 
 import type { PosPagseguro } from "./PosPagseguro.nitro";
-import { InstallmentTypes, PaymentTypes, VoidType, type PaymentData, type TransactionResult, type VoidPayData } from "./types/payments";
+import { InstallmentTypes, PaymentEvent, PaymentTypes, VoidType, type PaymentData, type TransactionResult, type VoidPayData } from "./types/payments";
 
 import { AbordError, PaymentError, PrintError } from "./types/exceptions";
 import { Capabilities, type SubAcquirer, type UserData } from "./types/device";
@@ -91,7 +91,7 @@ export default class PagSeguro {
      *   print_receipt: true
      * });
      */
-    static async do_payment(data: PaymentData, process_callback: (message: string) => void = () => { }): Promise<TransactionResult> {
+    static async do_payment(data: PaymentData, process_callback: (message: string, code: PaymentEvent) => void = () => { }): Promise<TransactionResult> {
         validate_payment_data(data);
         const r = await PosPagseguroHybridObject.doPayment(data, process_callback);
         if ("message" in r && "code" in r) throw new PaymentError(r.code, r.message);
@@ -109,7 +109,7 @@ export default class PagSeguro {
      * @returns Resultado da operação de cancelamento
      * @throws PaymentError Em caso de erro de validação ou rejeição
      */
-    static async void_payment(data: VoidPayData, process_callback: (message: string) => void = () => { }): Promise<TransactionResult> {
+    static async void_payment(data: VoidPayData, process_callback: (message: string, code: PaymentEvent) => void = () => { }): Promise<TransactionResult> {
         validate_void_pay_data(data);
         const r = await PosPagseguroHybridObject.voidPayment(data, process_callback);
         if ("message" in r && "code" in r) throw new PaymentError(r.code, r.message);
@@ -133,7 +133,7 @@ export default class PagSeguro {
      * @returns Dados completos da transação (valor, NSU, bandeira, etc.)
      * @throws PaymentError Se não houver transação aprovada ou em caso de erro
      */
-    static get_last_approved_transaction(): TransactionResult{
+    static get_last_approved_transaction(): TransactionResult {
         const r = PosPagseguroHybridObject.getLastApprovedTransaction();
         if ("message" in r && "code" in r) throw new PaymentError(r.code, r.message);
         return r;

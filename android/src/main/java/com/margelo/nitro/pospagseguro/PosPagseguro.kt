@@ -125,7 +125,7 @@ class PosPagseguro : HybridPosPagseguroSpec() {
     else return CustomError("OPR_ERROR", "Ocorreu um erro ao solicitar cancelamento");
   }
 
-  override fun doPayment(payment_data: PaymentData, process_callback: (event: String) -> Unit): Promise<Variant_CustomError_TransactionResult> {
+  override fun doPayment(payment_data: PaymentData, process_callback: (event: String, code: PaymentEvent) -> Unit): Promise<Variant_CustomError_TransactionResult> {
     return Promise.async {
             try {
                 if (!plug_pag.isAuthenticated()) return@async Variant_CustomError_TransactionResult.create(CustomError("AUTH", "POS não autenticado!"));
@@ -173,7 +173,7 @@ class PosPagseguro : HybridPosPagseguroSpec() {
                             }
                             else -> data.customMessage ?: "AGUARDANDO..."
                         }
-                        process_callback(msg);
+                        process_callback(msg, PaymentEvent.values().find{it.value == data.eventCode} ?: PaymentEvent.DEFAULT);
                     }
                 })
 
@@ -196,7 +196,7 @@ class PosPagseguro : HybridPosPagseguroSpec() {
         }
     }
 
-    override fun voidPayment(void_data: VoidPayData, process_callback: (event: String) -> Unit): Promise<Variant_CustomError_TransactionResult> {
+    override fun voidPayment(void_data: VoidPayData, process_callback: (event: String, code:PaymentEvent) -> Unit): Promise<Variant_CustomError_TransactionResult> {
         return Promise.async {
             try {
                 plug_pag.setEventListener(object : PlugPagEventListener {
@@ -212,7 +212,7 @@ class PosPagseguro : HybridPosPagseguroSpec() {
                             }
                             else -> data.customMessage ?: "AGUARDANDO..."
                         }
-                        process_callback(msg);
+                        process_callback(msg, PaymentEvent.values().find{it.value == data.eventCode} ?: PaymentEvent.DEFAULT);
                     }
                 })
                 val r = plug_pag.voidPayment(PlugPagVoidData(

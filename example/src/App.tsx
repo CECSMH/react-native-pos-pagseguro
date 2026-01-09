@@ -110,8 +110,9 @@ export default function App() {
         user_reference: 1203,
         installments: paymentConfig.installments,
         print_receipt: true,
-      }, (msg) => {
+      }, (msg, code) => {
         setProcess(msg);
+        console.log(code)
       }).then(e => { setProcess("") });
 
       Alert.alert('Sucesso!', `${paymentConfig.title} realizado com sucesso!`);
@@ -164,7 +165,10 @@ export default function App() {
                 transaction_id: lastTransaction.transaction_id!,
                 print_receipt: true,
                 void_type: VoidType.PAYMENT, // PAYMENT (use 2 apenas se for QR Code PIX não pago)
-              }, setProcess).then(console.log);
+              }, (msg, code) => {
+                setProcess(msg);
+                console.log(code)
+              }).then(console.log);
 
               Alert.alert('Sucesso', 'Transação cancelada com sucesso!');
               setLastTransaction(null); // Limpa após cancelamento
