@@ -82,7 +82,7 @@ export type PaymentData = {
    * Referência opcional do usuário ou da transação.
    * Pode ser usada para vincular o pagamento a um pedido ou cliente específico.
    */
-  user_reference?: number,
+  user_reference?: string | number,
 }
 
 /**

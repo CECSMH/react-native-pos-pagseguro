@@ -34,6 +34,36 @@ export default function App() {
 
   useEffect(() => {
     checkDeviceStatus();
+
+    PagSeguro.set_modal_styles({
+      head_text_color: "#FFFFFF",
+      head_background_color: "#0000FF",
+      content_text_color: "black",
+      content_text_value1_color: "#FF0000",
+      content_text_value2_color: "#00FF00",
+      positive_button_text_color: "white",
+      positive_button_background: "#008000",
+      negative_button_text_color: "white",
+      negative_button_background: "#FF0000",
+      generic_button_background: "#CCCCCC",
+      generic_button_text_color: "black",
+      generic_sms_edit_text_background: "#F5F5F5",
+      generic_sms_edit_text_text_color: "blue",
+      line_color: "#999999"
+    });
+
+    PagSeguro.set_printer_modal_styles({
+      title: "Confirmação de Pagamento?",
+      title_color: "blue",
+      confirm_text_color: "green",
+      cancel_text_color: "red",
+      window_background_color: "#FFFFFF",
+      button_background_color: "#0000FF",
+      button_background_color_disabled: "#AAAAAA",
+      send_sms_text_color: "black",
+      max_time_show_popup: 15.0
+    })
+
   }, []);
 
   const checkDeviceStatus = async () => {

@@ -5,13 +5,14 @@ import { InstallmentTypes, PaymentEvent, PaymentTypes, VoidType, type PaymentDat
 
 import { AbordError, PaymentError, PrintError } from "./types/exceptions";
 import { Capabilities, type SubAcquirer, type UserData } from "./types/device";
+import type { CustomPrinterLayout, StyleData } from "./types/styles";
 
 const PosPagseguroHybridObject = NitroModules.createHybridObject<PosPagseguro>('PosPagseguro');
 
 /**
  * PagSeguro POS SDK para React Native
  *
- * Biblioteca de alto desempenho para integração com terminais PagSeguro (Moderninha, Smart, Pro, etc.)
+ * Biblioteca de alto desempenho para integração com terminais PagSeguro (Moderninha, Moderninha2, etc.)
  *
  * ### Funcionalidades principais
  * - Inicialização e ativação do terminal
@@ -137,6 +138,26 @@ export default class PagSeguro {
         const r = PosPagseguroHybridObject.getLastApprovedTransaction();
         if ("message" in r && "code" in r) throw new PaymentError(r.code, r.message);
         return r;
+    };
+
+    /**
+     * Define o estilo visual (cores, botões, textos) das janelas modais
+     * exibidas pelo terminal durante operações de pagamento.
+     *
+     * @param styles Objeto StyleData contendo as cores e estilos desejados
+     */
+    static set_modal_styles(styles: StyleData): boolean {
+        return PosPagseguroHybridObject.setStyleData(styles);
+    };
+
+    /**
+     * Define o layout e estilo visual da janela de impressão customizada
+     * utilizada pelo terminal
+     *
+     * @param styles Objeto CustomPrinterLayout com título, cores e tempo máximo de exibição
+     */
+    static set_printer_modal_styles(styles: CustomPrinterLayout): void {
+        PosPagseguroHybridObject.setPrinterLayout(styles);
     };
 
     /**
@@ -285,7 +306,7 @@ function validate_payment_data(data: PaymentData): void {
     if (data.user_reference !== undefined) {
         const ref = String(data.user_reference);
         const regex = /^[a-zA-Z0-9]+$/;
-        if (!regex.test(ref)) throw new PaymentError("INVALID_ARG", "A referência do usuário deve conter apenas letras ou números.");
+        if (!regex.test(ref)) throw new PaymentError("INVALID_ARG", "A referência do usuário deve conter apenas letras e/ou números.");
     };
 };
 

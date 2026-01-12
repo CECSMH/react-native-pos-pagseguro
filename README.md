@@ -120,8 +120,39 @@ try {
   console.error('Print failed:', error);
 }
 ```
+### 5. Customize Payment, Print & Operation Dialogs
+```typescript
+PagSeguro.set_modal_styles({
+  head_text_color: "#FFFFFF",
+  head_background_color: "#0000FF",           // Blue header background
+  content_text_color: "black",
+  content_text_value1_color: "#FF0000",       // Red for main amounts/values
+  content_text_value2_color: "#00FF00",       // Green for secondary values
+  positive_button_text_color: "white",
+  positive_button_background: "#008000",      // Green "Confirm/OK" button
+  negative_button_text_color: "white",
+  negative_button_background: "#FF0000",      // Red "Cancel" button
+  generic_button_background: "#CCCCCC",
+  generic_button_text_color: "black",
+  generic_sms_edit_text_background: "#F5F5F5",
+  generic_sms_edit_text_text_color: "blue",
+  line_color: "#999999"                       // Dividers color
+});
 
-### 5. Check device capabilities
+PagSeguro.set_printer_modal_styles({
+  title: "Confirmação de Pagamento?",
+  title_color: "blue",
+  confirm_text_color: "green",
+  cancel_text_color: "red",
+  window_background_color: "#FFFFFF",
+  button_background_color: "#0000FF",
+  button_background_color_disabled: "#AAAAAA",
+  send_sms_text_color: "black",
+  max_time_show_popup: 15.0     // Timeout in seconds
+});
+```
+
+### 6. Check device capabilities
 ```typescript
 if (PagSeguro.capabilities.has_printer()) {
   console.log('This terminal has a thermal printer');
@@ -132,7 +163,7 @@ if (PagSeguro.capabilities.has_picc()) {
 }
 ```
 
-### 6. Get device info
+### 7. Get device info
 ```typescript
 console.log('Model:', PagSeguro.get_model());
 console.log('Serial:', PagSeguro.get_serial_number());
@@ -159,13 +190,18 @@ try {
 
 All types and enums are fully typed. Key exports:
 
+- `PagSeguro` (main class)
 - `PaymentData`
 - `TransactionResult`
 - `VoidPayData`
 - `PaymentTypes`
 - `InstallmentTypes`
 - `VoidType`
-- `capabilities` (object with detection methods)
+- `PaymentEvent`
+- `PrintError`
+- `PaymentError`
+- `StyleData`
+- `CustomPrinterLayout`
 
 ## Contributing
 

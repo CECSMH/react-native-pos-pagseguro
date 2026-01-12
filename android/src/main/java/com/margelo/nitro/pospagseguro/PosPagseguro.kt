@@ -69,6 +69,9 @@ class PosPagseguro : HybridPosPagseguroSpec() {
 
   override fun reboot(): Unit { plug_pag.reboot(); }
 
+  override fun setStyleData(data: StyleData): Boolean { return plug_pag.setStyleData(data.toPlugPagStyleData()) }
+  override fun setPrinterLayout(data: CustomPrinterLayout): Unit { plug_pag.setPlugPagCustomPrinterLayout(data.toPlugPagCustomPrinterLayout()) }
+
   override fun reprintCustomerReceipt(): Promise<Variant_Double_CustomError> {
     return Promise.async {
         val r = plug_pag.reprintCustomerReceipt();
@@ -152,7 +155,10 @@ class PosPagseguro : HybridPosPagseguroSpec() {
                     amount = payment_data.amount.toInt(),
                     installmentType = installment_type,
                     installments = payment_data.installments.toInt(),
-                    userReference = payment_data.user_reference?.toInt().toString() ?: "",
+                    userReference = payment_data.user_reference?.match(
+                        first = { it },
+                        second = { it.toInt().toString() } 
+                    ) ?: "",
                     printReceipt = payment_data.print_receipt ?: true,
                     partialPay = false,
                     isCarne = false
@@ -199,15 +205,17 @@ class PosPagseguro : HybridPosPagseguroSpec() {
     override fun voidPayment(void_data: VoidPayData, process_callback: (event: String, code:PaymentEvent) -> Unit): Promise<Variant_CustomError_TransactionResult> {
         return Promise.async {
             try {
+                var password_count = 0;
+
                 plug_pag.setEventListener(object : PlugPagEventListener {
                     override fun onEvent(data: PlugPagEventData) {
                         val msg = when (data.eventCode) {
                             PlugPagEventData.EVENT_CODE_DIGIT_PASSWORD -> {
-                             
-                                "SENHA: *"
+                                password_count++
+                                "SENHA: "+("*".repeat(password_count))
                             }
                             PlugPagEventData.EVENT_CODE_NO_PASSWORD -> {
-
+                                password_count = 0
                                 "DIGITE A SENHA"
                             }
                             else -> data.customMessage ?: "AGUARDANDO..."
