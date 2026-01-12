@@ -3,7 +3,7 @@
 **PagSeguro POS SDK for React Native** – Integration with PagSeguro terminals (Moderninha, Moderninha2, etc.) using react-native-nitro-modules.
 
 Supports credit, debit, voucher, PIX payments, installments, cancellations, receipt printing, and more.
-[![npm version](https://badge.fury.io/js/react-native-pos-pagseguro.svg)](https://badge.fury.io/js/react-native-pos-pagseguro)
+[![npm version](https://badge.fury.io/js/react-native-pos-pagseguro.svg)](https://badge.fury.io/js/react-native-pos-pagseguro) 
 [![Platform](https://img.shields.io/badge/platform-Android-yellow.svg)](https://www.android.com)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
