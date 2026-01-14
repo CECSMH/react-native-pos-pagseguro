@@ -334,6 +334,71 @@ export enum PaymentEvent {
   ON_EVENT_ERROR = -3
 }
 
+
+/**
+ * Estados possíveis dos hooks de pagamento e devolução
+ */
+export enum HookPayState {
+    /** Estado inicial, nenhuma operação em andamento */
+    IDLE = "idle",
+    /** Processando a transação */
+    PROCESSING = "processing",
+    /** Aguardando inserção, passagem ou aproximação do cartão */
+    WAITING_CARD = "waiting_card",
+    /** Cartão foi inserido/lido no terminal */
+    CARD_INSERTED = "card_inserted",
+    /** Aguardando remoção do cartão do terminal */
+    WAITING_REMOVE_CARD = "waiting_remove_card",
+    /** Cartão foi removido do terminal */
+    CARD_REMOVED = "card_removed",
+    /** Aguardando digitação da senha do cartão */
+    ENTER_PASSWORD = "enter_password",
+    /** Senha foi confirmada corretamente */
+    PIN_OK = "pin_ok",
+    /** Transação está sendo autorizada */
+    AUTHORIZING = "authorizing",
+    /** Necessário usar o chip do cartão */
+    USE_CHIP = "use_chip",
+    /** Necessário usar a tarja magnética do cartão */
+    USE_TARJA = "use_tarja",
+    /** Resolvendo pendências de transações anteriores */
+    SOLVING_PENDINGS = "solving_pendings",
+    /** Baixando tabelas de configuração do terminal */
+    DOWNLOADING_TABLES = "downloading_tables",
+    /** Gravando tabelas de configuração no terminal */
+    RECORDING_TABLES = "recording_tables",
+    /** Pagamento aprovado com sucesso */
+    APPROVED = "approved",
+    /** Transação finalizada */
+    SALE_END = "sale_end",
+    /** Pagamento reprovado/negado */
+    REPROVED = "reproved",
+    /** Erro durante o processamento */
+    ERROR = "error",
+    /** Aguardando digitação do CVV */
+    ENTER_CVV = "enter_cvv",
+    /** CVV confirmado corretamente */
+    CVV_OK = "cvv_ok",
+    /** Aguardando digitação do BIN do cartão */
+    ENTER_CAR_BIN = "enter_car_bin",
+    /** BIN do cartão confirmado */
+    CAR_BIN_OK = "car_bin_ok",
+    /** Aguardando digitação do nome do portador */
+    ENTER_CAR_HOLDER = "enter_car_holder",
+    /** Nome do portador confirmado */
+    CAR_HOLDER_OK = "car_holder_ok",
+    /** Ativação realizada com sucesso */
+    ACTIVATION_SUCCESS = "activation_success",
+    /** Dígito de senha sendo digitado */
+    DIGIT_PASSWORD = "digit_password",
+    /** Erro na leitura por aproximação (NFC) */
+    CONTACTLESS_ERROR = "contactless_error",
+    /** Instruções sendo exibidas no dispositivo durante NFC */
+    CONTACTLESS_ON_DEVICE = "contactless_on_device",
+    /** Transação concluída com sucesso */
+    SUCCESS = "success"
+};
+
 export {
   VoidType,
   PaymentTypes,

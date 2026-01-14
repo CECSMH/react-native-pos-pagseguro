@@ -12,11 +12,14 @@ import {
 } from 'react-native';
 
 import PagSeguro, { PaymentTypes, InstallmentTypes, type TransactionResult, VoidType } from 'react-native-pos-pagseguro';
+import PaymentScreen from './payhook';
 
 const ACTIVATION_CODE = '<seu codigo aqui>'; // Substitua pelo seu código real
 const TEST_AMOUNT = 2000;
 
 export default function App() {
+
+  return <PaymentScreen />
   const [isInitialized, setIsInitialized] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
   const [deviceInfo, setDeviceInfo] = useState<{
