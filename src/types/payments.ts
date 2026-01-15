@@ -127,6 +127,36 @@ export enum CardIssuerNationality {
 }
 
 /**
+ * Representa uma parcela em uma transação PagSeguro.
+ */
+export type Installment = {
+  /**
+   * Quantidade de parcelas.
+   */
+  quantity: number;
+  /**
+   * Valor de cada parcela em centavos.
+   * Exemplo: 1000 representa R$ 10,00.
+   */
+  amount: number;
+  /**
+   * Valor total da transação em centavos.
+   * Exemplo: 10000 representa R$ 100,00.
+   */
+  total: number;
+  /**
+   * Valor de cada parcela já formatado em moeda brasileira.
+   * Exemplo: "R$ 10,00".
+   */
+  formatted_amount: string;
+  /**
+   * Valor total da transação já formatado em moeda brasileira.
+   * Exemplo: "R$ 100,00".
+   */
+  formatted_total: string;
+};
+
+/**
  * Resultado detalhado de uma transação de pagamento.
  */
 export type TransactionResult = {

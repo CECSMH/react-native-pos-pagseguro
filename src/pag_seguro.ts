@@ -1,10 +1,10 @@
 import { NitroModules } from "react-native-nitro-modules";
 
 import type { PosPagseguro } from "./PosPagseguro.nitro";
-import { InstallmentTypes, PaymentEvent, PaymentTypes, VoidType, type PaymentData, type TransactionResult, type VoidPayData } from "./types/payments";
+import { InstallmentTypes, PaymentEvent, PaymentTypes, VoidType, type Installment, type PaymentData, type TransactionResult, type VoidPayData } from "./types/payments";
 
 import { AbordError, PaymentError, PrintError } from "./types/exceptions";
-import { Capabilities, type SubAcquirer, type UserData } from "./types/device";
+import { Capabilities, PlugPagMode, PlugPagOp, type SubAcquirer, type UserData } from "./types/device";
 import type { CustomPrinterLayout, StyleData } from "./types/styles";
 
 const PosPagseguroHybridObject = NitroModules.createHybridObject<PosPagseguro>('PosPagseguro');
@@ -227,6 +227,21 @@ export default class PagSeguro {
     };
 
     /**
+     * Calcula as opções de parcelamento para um determinado valor.
+     *
+     * @param value Valor da transação **em centavos** (número inteiro positivo).
+     *              Exemplo: 1500 = R$ 15,00 | 149990 = R$ 1.499,90
+     * @param type Tipo de parcelamento (ver `InstallmentTypes`).
+     */
+    static calculate_installments(value: number, type: InstallmentTypes): Installment[] {
+        if (!Number.isInteger(value) || value <= 0) throw new Error("O valor deve ser um número inteiro positivo(centavos)");
+
+        if (![InstallmentTypes.SELLER_INSTALLMENT, InstallmentTypes.BUYER_INSTALLMENT].includes(type)) throw new Error(`Tipo de parcelamento inválido.`);
+
+        return PosPagseguroHybridObject.calculateInstallments(String(value), type);
+    };
+
+    /**
      * Imprime um arquivo de imagem armazenado no dispositivo.
      *
      * @param path Caminho completo do arquivo no filesystem
@@ -257,8 +272,6 @@ export default class PagSeguro {
 
     /**
      * Verificação de recursos disponíveis no terminal.
-     *
-     * Permite adaptar a UI conforme os módulos presentes.
      */
     static readonly capabilities = {
         /** Verifica presença de módulo Bluetooth */
@@ -296,6 +309,59 @@ export default class PagSeguro {
             return PosPagseguroHybridObject.hasCapability(Capabilities.MODEM);
         }
     }
+    /**
+    * Verificação de funcionalidades de software suportadas pela PlugPagService atual
+    */
+    static readonly software = {
+        /**
+        * Verifica se o terminal suporta ativação/inicialização.
+        */
+        can_activate(): boolean {
+            return PosPagseguroHybridObject.hasSoftwareCapability(PlugPagOp.ACTIVATE, PlugPagMode.DEFAULT);
+        },
+        /**
+         * Verifica suporte a ativação remota (sem QR Code manual).
+         */
+        can_activate_remotely(): boolean {
+            return PosPagseguroHybridObject.hasSoftwareCapability(PlugPagOp.ACTIVATE, PlugPagMode.REMOTECONFIG);
+        },
+        /**
+        * Verifica se é possível realizar pagamentos no terminal.
+        */
+        can_pay(): boolean {
+            return PosPagseguroHybridObject.hasSoftwareCapability(PlugPagOp.PAYMENT, PlugPagMode.DEFAULT);
+        },
+        /**
+         * Verifica suporte a cancelamento/estorno de transações.
+         */
+        can_refund(): boolean {
+            return PosPagseguroHybridObject.hasSoftwareCapability(PlugPagOp.REFUND, PlugPagMode.DEFAULT);
+        },
+        /**
+         * Verifica se é possível reimprimir comprovantes da última transação.
+         */
+        can_reprint(): boolean {
+            return PosPagseguroHybridObject.hasSoftwareCapability(PlugPagOp.REPRINTCUSTOMER, PlugPagMode.DEFAULT);
+        },
+        /**
+        * Verifica suporte a impressão de conteúdo personalizado/livre.
+        */
+        can_print_custom(): boolean {
+            return PosPagseguroHybridObject.hasSoftwareCapability(PlugPagOp.PRINT, PlugPagMode.DEFAULT);
+        },
+        /**
+        * Verifica suporte ao cálculo de parcelas com valor total.
+        */
+        can_calc_installments(): boolean {
+            return PosPagseguroHybridObject.hasSoftwareCapability(PlugPagOp.CALCINSTALLMENTSWITHTOTAL, PlugPagMode.DEFAULT);
+        },
+        /**
+        * Verifica suporte básico a operações de pré-autorização.
+        */
+        can_pre_auth(): boolean {
+            return PosPagseguroHybridObject.hasSoftwareCapability(PlugPagOp.PREAUTHCREATE, PlugPagMode.DEFAULT);
+        },
+    };
 }
 
 function validate_payment_data(data: PaymentData): void {

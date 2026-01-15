@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 
 import PagSeguro from "../pag_seguro";
 import {
@@ -16,6 +16,10 @@ export default function usePagPayment() {
     const [errors, setErrors] = useState<any>(null);
 
     const { isError, isSuccess, isProcessing } = useBoolStates(state);
+
+    useEffect(() => {
+        return () => { if (isProcessing) PagSeguro.abort_current_operation(); };
+    }, []);
 
     const request_payment = useCallback(async (data: PaymentData): Promise<TransactionResult> => {
         try {
@@ -110,13 +114,11 @@ export default function usePagPayment() {
                         setMessage("Transação concluída com sucesso!");
                         break;
                     /* case PaymentEvent.CUSTOM_MESSAGE:
-                        // Usa mensagem customizada do terminal se disponível
                         if (msg) {
                             setMessage(msg);
                         }
                         break;
                     case PaymentEvent.DEFAULT:
-                        // Mensagem genérica/fallback
                         if (msg) {
                             setMessage(msg);
                         }
@@ -186,8 +188,6 @@ export default function usePagPayment() {
         aborting.current = false;
         return true;
     }, []);
-
-
 
     return {
         request_payment,

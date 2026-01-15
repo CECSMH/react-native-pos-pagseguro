@@ -25,6 +25,31 @@ export type UserData = {
     email?: string;
 }
 
+export enum PlugPagOp {
+    ACTIVATE = 1001,
+    PAYMENT = 1002,
+    REFUND = 1003,
+    QUERYLASTAPPROVED = 1004,
+    REPRINTCUSTOMER = 1005,
+    REPRINTMERCHANT = 1006,
+    PRINT = 1007,
+    CALCINSTALLMENTS = 1008,
+    CALCINSTALLMENTSWITHTOTAL = 1009,
+    GETCARDDATA = 1010,
+    INITTECHACTIVATION = 1011,
+    SENDLOGS = 1012,
+
+    PREAUTHCREATE = 1101,
+    PREAUTHCAPTURE = 1102,
+    PREAUTHCANCEL = 1103,
+
+    NOEXTRAPARAMS = 9999,
+}
+
+export enum PlugPagMode {
+    REMOTECONFIG = 2001,
+    DEFAULT = 0,
+}
 
 enum Capabilities {
     /**

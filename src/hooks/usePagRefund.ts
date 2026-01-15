@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import PagSeguro from "../pag_seguro";
+
 import {
     PaymentEvent,
     type VoidPayData,
     type TransactionResult,
     HookPayState
 } from "../types/payments";
+import useBoolStates from "./useBoolStates";
 
 export default function usePagRefund() {
     const aborting = useRef(false);
@@ -14,18 +16,15 @@ export default function usePagRefund() {
     const [message, setMessage] = useState("");
     const [errors, setErrors] = useState<any>(null);
 
-    // Cleanup on unmount - abort if processing
+    const { isError, isProcessing, isSuccess } = useBoolStates(state);
+
     useEffect(() => {
-        return () => {
-            if (isProcessing) {
-                PagSeguro.abort_current_operation();
-            }
-        };
+        return () => { if (isProcessing) PagSeguro.abort_current_operation(); };
     }, []);
 
     const reset = useCallback(() => {
         if (isProcessing) {
-            console.warn("Não é possível resetar enquanto o estorno está sendo processado");
+            console.warn("Não é possível resetar enquanto o estorno está sendo processado!");
             return false;
         }
 
@@ -173,38 +172,6 @@ export default function usePagRefund() {
             aborting.current = false;
         }, 1000);
     }, []);
-
-    const isProcessing = useMemo(() => [
-        HookPayState.PROCESSING,
-        HookPayState.WAITING_CARD,
-        HookPayState.CARD_INSERTED,
-        HookPayState.USE_CHIP,
-        HookPayState.USE_TARJA,
-        HookPayState.ENTER_PASSWORD,
-        HookPayState.ENTER_CVV,
-        HookPayState.PIN_OK,
-        HookPayState.CVV_OK,
-        HookPayState.DIGIT_PASSWORD,
-        HookPayState.AUTHORIZING,
-        HookPayState.WAITING_REMOVE_CARD,
-        HookPayState.CONTACTLESS_ON_DEVICE,
-        HookPayState.SOLVING_PENDINGS,
-        HookPayState.DOWNLOADING_TABLES,
-        HookPayState.RECORDING_TABLES
-    ].includes(state), [state]);
-
-    const isSuccess = useMemo(() => [
-        HookPayState.APPROVED,
-        HookPayState.SUCCESS,
-        HookPayState.SALE_END
-    ].includes(state), [state]);
-
-    const isError = useMemo(() =>
-        state === HookPayState.ERROR ||
-        state === HookPayState.REPROVED ||
-        state === HookPayState.CONTACTLESS_ERROR,
-        [state]
-    );
 
     return {
         request_refund,

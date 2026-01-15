@@ -13,6 +13,8 @@ Supports credit, debit, voucher, PIX payments, installments, cancellations, rece
 - **Payments:** Credit, Debit, Voucher, PIX
 - **Installments:** (à vista, store installment without interest, buyer installment with interest)
 - **Cancel/refund:** transactions (same-day only)
+- **Easy use payment Hook** 
+- **Easy use refund Hook** 
 - Get last approved transaction
 - **Reprint:** customer or merchant receipt
 - Custom image printing (file path or Base64)
@@ -20,6 +22,7 @@ Supports credit, debit, voucher, PIX payments, installments, cancellations, rece
 - Reboot terminal
 - **Device info:** model, serial number, user data, sub-acquirer data
 - **Capability detection:** printer, NFC, chip, magnetic stripe, etc.
+- **Software Capability detection:** can activate, can activate remotely, can refund, etc.
 - Progress callbacks during payment flow
 
 ## Installation
@@ -91,6 +94,60 @@ try {
 }
 ```
 
+### 2.1. Make a payment with hook
+[Full example here](https://github.com/CECSMH/react-native-pos-pagseguro/blob/main/example/src/payhook.tsx)
+```typescript
+const {
+    request_payment,
+    abort_operation,
+    reset,
+    state,
+    message,
+    errors,
+    isError,
+    isSuccess,
+    isProcessing,
+} = usePagPayment();
+
+const handlePayment = async () => {
+    const paymentData: PaymentData = {
+        amount,
+        type: PaymentTypes.DEBIT,
+        installment_type: InstallmentTypes.NO_INSTALLMENT,
+        installments: 1,
+        print_receipt: false,
+        user_reference: `ORDER${Date.now()}`,
+    };
+    try {
+        const result = await request_payment(paymentData);
+        Alert.alert(
+            'Pagamento Aprovado! ✓',
+            `NSU: ${result.nsu}\nAutorização: ${result.auto_code}\nBandeira: ${result.card_brand}`,
+            [{ text: 'OK', onPress: () => reset() }]
+        );
+    } catch (error) {console.log(error)
+        Alert.alert(
+            'Erro no Pagamento ✗',
+            errors?.message || 'Falha ao processar pagamento',
+            [{ text: 'OK', onPress: () => reset() }]
+        );
+    }
+
+    console.log(message) // Digite sua senha.
+
+    const getStateIcon = () => {
+      switch (state) {
+          case HookPayState.WAITING_CARD:
+              return '💳';
+          case HookPayState.CARD_INSERTED:
+              return '✓';
+          case HookPayState.ENTER_PASSWORD:
+          ...
+      }
+    };
+
+};
+```
 
 ### 3. Cancel a payment (same day only)
 ```typescript
@@ -108,6 +165,80 @@ try {
 } catch (error) {
   console.error('Cancellation failed:', error);
 }
+```
+
+### 3.1. Cancel a payment with hook (same day only)
+[Full example here](https://github.com/CECSMH/react-native-pos-pagseguro/blob/main/example/src/refundhook.tsx)
+```typescript
+const {
+    request_refund,
+    abort_operation,
+    reset,
+    state,
+    message,
+    errors,
+    isError,
+    isSuccess,
+    isProcessing,
+} = usePagRefund();
+
+const [transactionCode, setTransactionCode] = useState('');
+const [transactionId, setTransactionId] = useState('');
+
+const handleRefund = async () => {
+    if (!transactionCode.trim()) {
+        Alert.alert('Atenção', 'Informe o código da transação');
+        return;
+    }
+    if (!transactionId.trim()) {
+        Alert.alert('Atenção', 'Informe o ID da transação');
+        return;
+    }
+    const refundData: VoidPayData = {
+        transaction_code: transactionCode.trim(),
+        transaction_id: transactionId.trim(),
+        print_receipt: false,
+        void_type: VoidType.PAYMENT,
+    };
+    try {
+        const result = await request_refund(refundData);
+        Alert.alert(
+            'Estorno Aprovado! ✓',
+            `NSU: ${result.nsu}\nCódigo: ${result.transaction_code}\nData: ${result.date} ${result.time}`,
+            [
+                {
+                    text: 'OK',
+                    onPress: () => {
+                        reset();
+                        setTransactionCode('');
+                        setTransactionId('');
+                    }
+                }
+            ]
+        );
+    } catch (error) {
+        Alert.alert(
+            'Erro no Estorno ✗',
+            errors?.message || 'Falha ao processar estorno',
+            [{ text: 'OK', onPress: () => reset() }]
+        );
+    }
+}
+
+console.log(message) // Autorizando estorno...
+
+const getStateIcon = () => {
+   switch (state) {
+       case HookPayState.WAITING_CARD:
+           return '💳';
+       case HookPayState.CARD_INSERTED:
+           return '✓';
+       case HookPayState.ENTER_PASSWORD:
+       case HookPayState.ENTER_CVV:
+           return '🔒';
+        ...
+   }
+}:
 ```
 
 
@@ -169,6 +300,28 @@ console.log('Model:', PagSeguro.get_model());
 console.log('Serial:', PagSeguro.get_serial_number());
 console.log('User data:', PagSeguro.get_userdata());
 ```
+### 8. Calculate installments
+```typescript
+//InstallmentTypes.SELLER_INSTALLMENT or InstallmentTypes.BUYER_INSTALLMENT
+// R$ 230,00
+const installments = PagSeguro.calculate_installments(23000, InstallmentTypes.SELLER_INSTALLMENT);
+console.log(installments)
+/*[{
+    "quantity": 2, 
+    "amount": 11500,
+    "total": 23000,
+    "formatted_amount": "R$ 115,00",
+    "formatted_total": "R$ 230,00"
+} 
+...]*/
+```
+### 8. Check Software capabilities
+```typescript
+console.log("can activate: ", PagSeguro.software.can_activate());
+console.log("can activate remotely: ", PagSeguro.software.can_activate_remotely());
+console.log("can reprint: ", PagSeguro.software.can_reprint());
+//...
+```
 
 ## Error Handling
 
@@ -188,10 +341,13 @@ try {
 
 ## API Reference
 
-All types and enums are fully typed. Key exports:
+All types and enums are fully typed. exports:
 
 - `PagSeguro` (main class)
 - `PaymentData`
+- `usePagRefund`
+- `usePagPayment`
+- `HookPayState`
 - `TransactionResult`
 - `VoidPayData`
 - `PaymentTypes`
@@ -221,9 +377,9 @@ If you've found this library helpful, consider buying me a coffee!
 
 
 
-Scan the QR code to donate (Lightning⚡):
+Scan the QR code to donate (PIX):
 
-![Lightning donation QR code for cecsmh@bipa.app](https://api.qrserver.com/v1/create-qr-code/?data=lightning:cecsmh@bipa.app&size=300x300&ecc=M)
+![PIX donation QR code](https://api.qrserver.com/v1/create-qr-code/?data=00020126580014BR.GOV.BCB.PIX013698817f09-40db-47c0-adf3-0c69b99ef1635204000053039865802BR5924Carlos%20Eduardo%20Conceicao6009SAO%20PAULO62140510rmQmKYzFZ863046800)
 
 Thank you for your support! 🚀
 

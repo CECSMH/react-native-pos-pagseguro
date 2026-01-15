@@ -1,14 +1,14 @@
 
 import { useEffect, useState } from 'react';
 import {
-  ScrollView,
-  View,
-  Text,
-  Button,
-  Alert,
-  StyleSheet,
-  ActivityIndicator,
-  TouchableOpacity,
+    ScrollView,
+    View,
+    Text,
+    Button,
+    Alert,
+    StyleSheet,
+    ActivityIndicator,
+    TouchableOpacity,
 } from 'react-native';
 
 import PagSeguro, { PaymentTypes, InstallmentTypes, type TransactionResult, VoidType } from 'react-native-pos-pagseguro';
@@ -25,6 +25,17 @@ export default function RegularPay({ }) {
         serial: string;
         authenticated: boolean;
         capabilities: string[];
+    } | null>(null);
+
+    const [softwareCaps, setSoftwareCaps] = useState<{
+        canActivate: boolean;
+        canActivateRemotely: boolean;
+        canPay: boolean;
+        canRefund: boolean;
+        canReprint: boolean;
+        canPrintCustom: boolean;
+        canCalcInstallmentsWithTotal: boolean;
+        canPreAuth: boolean;
     } | null>(null);
 
     const [loading, setLoading] = useState(false);
@@ -85,6 +96,19 @@ export default function RegularPay({ }) {
             capabilities,
         });
 
+        setSoftwareCaps({
+            canActivate: PagSeguro.software.can_activate(),
+            canActivateRemotely: PagSeguro.software.can_activate_remotely(),
+            canPay: PagSeguro.software.can_pay(),
+            canRefund: PagSeguro.software.can_refund(),
+            canReprint: PagSeguro.software.can_reprint(),
+            canPrintCustom: PagSeguro.software.can_print_custom(),
+            canCalcInstallmentsWithTotal: PagSeguro.software.can_calc_installments(),
+            canPreAuth: PagSeguro.software.can_pre_auth(),
+        })
+
+        const d = PagSeguro.calculate_installments(23000, InstallmentTypes.BUYER_INSTALLMENT);
+        console.log(d)
         try {
             const data = PagSeguro.get_userdata();
             setUserData(data);
@@ -162,6 +186,7 @@ export default function RegularPay({ }) {
     const fetchLastTransaction = async () => {
         try {
             const transaction = PagSeguro.get_last_approved_transaction();
+            console.log(transaction)
             setLastTransaction(transaction);
         } catch (error) {
             Alert.alert('Aviso', 'Não foi possível obter a última transação aprovada');
@@ -236,8 +261,31 @@ export default function RegularPay({ }) {
                         ) : (
                             <Text>   Nenhum recurso detectado</Text>
                         )}
+
+                        {softwareCaps && (
+                            <>
+                                <Text style={styles.subtitle}>Operações suportadas:</Text>
+
+                                <Text>• Ativação: {softwareCaps.canActivate ? 'Sim' : 'Não'}</Text>
+                                <Text>• Ativação Remota: {softwareCaps.canActivateRemotely ? 'Sim' : 'Não'}</Text>
+                                <Text>• Pagamento: {softwareCaps.canPay ? 'Sim' : 'Não'}</Text>
+                                <Text>• Estorno/Cancelamento: {softwareCaps.canRefund ? 'Sim' : 'Não'}</Text>
+                                <Text>• Reimpressão: {softwareCaps.canReprint ? 'Sim' : 'Não'}</Text>
+                                <Text>• Impressão customizada: {softwareCaps.canPrintCustom ? 'Sim' : 'Não'}</Text>
+                                <Text>• Cálculo parcelas + total: {softwareCaps.canCalcInstallmentsWithTotal ? 'Sim' : 'Não'}</Text>
+                                <Text>• Pré-autorização: {softwareCaps.canPreAuth ? 'Sim' : 'Não'}</Text>
+
+                                {softwareCaps.canActivateRemotely && (
+                                    <Text>
+                                        ✓ Suporta ativação 100% remota (sem QR Code)
+                                    </Text>
+                                )}
+                            </>
+                        )}
+
                     </View>
                 )}
+
 
                 {/* Dados do Usuário / Estabelecimento */}
                 {userData && (
@@ -469,78 +517,78 @@ export default function RegularPay({ }) {
 
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  scrollContent: {
-    padding: 20,
-    flexGrow: 1,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#00b259',
-  },
-  loader: {
-    marginVertical: 20,
-  },
-  paymentGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  paymentButton: {
-    flexBasis: '30%',
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 80,
-  },
-  paymentButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    fontSize: 14,
-  },
-  card: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 12,
-    color: '#333',
-  },
-  subtitle: {
-    marginTop: 8,
-    fontWeight: '600',
-    color: '#555',
-  },
-  buttonContainer: {
-    gap: 14,
-    marginTop: 10,
-  },
-  buttonSpacing: {
-    height: 10,
-  },
-  busyText: {
-    textAlign: 'center',
-    color: '#d32f2f',
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginTop: 20,
-  },
+    container: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
+    scrollContent: {
+        padding: 20,
+        flexGrow: 1,
+    },
+    title: {
+        fontSize: 26,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        marginBottom: 30,
+        color: '#00b259',
+    },
+    loader: {
+        marginVertical: 20,
+    },
+    paymentGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    paymentButton: {
+        flexBasis: '30%',
+        paddingVertical: 16,
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 80,
+    },
+    paymentButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
+        textAlign: 'center',
+        fontSize: 14,
+    },
+    card: {
+        backgroundColor: '#fff',
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 20,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    cardTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        marginBottom: 12,
+        color: '#333',
+    },
+    subtitle: {
+        marginTop: 8,
+        fontWeight: '600',
+        color: '#555',
+    },
+    buttonContainer: {
+        gap: 14,
+        marginTop: 10,
+    },
+    buttonSpacing: {
+        height: 10,
+    },
+    busyText: {
+        textAlign: 'center',
+        color: '#d32f2f',
+        fontWeight: 'bold',
+        fontSize: 16,
+        marginTop: 20,
+    },
 });

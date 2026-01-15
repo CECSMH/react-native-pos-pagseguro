@@ -113,6 +113,12 @@ class PosPagseguro : HybridPosPagseguroSpec() {
   }
 
   override fun hasCapability(capability: Capabilities): Boolean { return plug_pag.hasCapability(capability.value) }
+  override fun hasSoftwareCapability(op: PlugPagOp, mode: PlugPagMode): Boolean { 
+    return when (mode){
+       PlugPagMode.REMOTECONFIG -> plug_pag.hasSoftwareCapability(op.toCommand().command,  PlugPagCommand.OPERATION_MODE_REMOTECFG.command) 
+       else ->  plug_pag.hasSoftwareCapability(op.toCommand().command) 
+    }
+  }
 
   override fun initialize(activation_code: String): Unit {
     try {
@@ -126,6 +132,20 @@ class PosPagseguro : HybridPosPagseguroSpec() {
     var r = plug_pag.abort()
     if (r.result == PlugPag.RET_OK) return null;
     else return CustomError("OPR_ERROR", "Ocorreu um erro ao solicitar cancelamento");
+  }
+
+  override fun calculateInstallments(value: String, type: InstallmentTypes): Array<Installment> {
+    val t = plug_pag.calculateInstallments(value, type.value)
+    
+    return t.map { native ->
+        Installment(
+            quantity = native.quantity.toDouble(),
+            amount = native.amount.toDouble(),
+            total = native.total.toDouble(),
+            formatted_amount = "R$ ${"%.2f".format(native.amount / 100.0)}",
+            formatted_total = "R$ ${"%.2f".format(native.total / 100.0)}"
+        )
+    }.toTypedArray()
   }
 
   override fun doPayment(payment_data: PaymentData, process_callback: (event: String, code: PaymentEvent) -> Unit): Promise<Variant_CustomError_TransactionResult> {
