@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 import PagSeguro from "../pag_seguro";
 import {
@@ -7,13 +7,15 @@ import {
     type PaymentData,
     type TransactionResult
 } from "../types/payments";
+import useBoolStates from "./useBoolStates";
 
 export default function usePagPayment() {
     const aborting = useRef(false);
-    const [state, setState] = useState(HookPayState.IDLE);
+    const [state, setState] = useState<HookPayState>(HookPayState.IDLE);
     const [message, setMessage] = useState("");
     const [errors, setErrors] = useState<any>(null);
 
+    const { isError, isSuccess, isProcessing } = useBoolStates(state);
 
     const request_payment = useCallback(async (data: PaymentData): Promise<TransactionResult> => {
         try {
@@ -174,7 +176,7 @@ export default function usePagPayment() {
 
     const reset = useCallback(() => {
         if (isProcessing) {
-            console.warn("Não é possivel reinicializar o hook com uma operação em andamento, por favor cancele a operação antes!");
+            console.warn("Não é possível resetar enquanto há uma operação em andamento, por favor cancele a operação antes!");
             return false;
         }
 
@@ -185,42 +187,7 @@ export default function usePagPayment() {
         return true;
     }, []);
 
-    const isProcessing = useMemo(() => [
-        HookPayState.PROCESSING,
-        HookPayState.WAITING_CARD,
-        HookPayState.CARD_INSERTED,
-        HookPayState.USE_CHIP,
-        HookPayState.USE_TARJA,
-        HookPayState.ENTER_PASSWORD,
-        HookPayState.ENTER_CVV,
-        HookPayState.ENTER_CAR_BIN,
-        HookPayState.ENTER_CAR_HOLDER,
-        HookPayState.PIN_OK,
-        HookPayState.CVV_OK,
-        HookPayState.CAR_BIN_OK,
-        HookPayState.CAR_HOLDER_OK,
-        HookPayState.DIGIT_PASSWORD,
-        HookPayState.AUTHORIZING,
-        HookPayState.WAITING_REMOVE_CARD,
-        HookPayState.CONTACTLESS_ON_DEVICE,
-        HookPayState.SOLVING_PENDINGS,
-        HookPayState.DOWNLOADING_TABLES,
-        HookPayState.RECORDING_TABLES
-    ].includes(state), [state]);
 
-    const isSuccess = useMemo(() => [
-        HookPayState.APPROVED,
-        HookPayState.SUCCESS,
-        HookPayState.SALE_END,
-        HookPayState.ACTIVATION_SUCCESS
-    ].includes(state), [state]);
-
-    const isError = useMemo(() =>
-        state === HookPayState.ERROR ||
-        state === HookPayState.REPROVED ||
-        state === HookPayState.CONTACTLESS_ERROR,
-        [state]
-    );
 
     return {
         request_payment,

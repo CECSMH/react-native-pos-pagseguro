@@ -3,7 +3,9 @@ import { PaymentError, PrintError } from './types/exceptions';
 import type { CustomPrinterLayout, StyleData } from './types/styles';
 import type { PaymentData, TransactionResult, VoidPayData } from './types/payments';
 import { InstallmentTypes, PaymentTypes, VoidType, PaymentEvent, HookPayState } from './types/payments';
+
 import usePagPayment from './hooks/usePagPayment';
+import usePagRefund from './hooks/usePagRefund';
 
 export type {
   StyleData,
@@ -18,6 +20,7 @@ export {
   VoidType,
   PrintError,
   HookPayState,
+  usePagRefund,
   PaymentError,
   usePagPayment,
   PaymentTypes,
