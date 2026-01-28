@@ -6,6 +6,7 @@ Supports credit, debit, voucher, PIX payments, installments, cancellations, rece
 [![npm version](https://badge.fury.io/js/react-native-pos-pagseguro.svg)](https://badge.fury.io/js/react-native-pos-pagseguro) 
 [![Platform](https://img.shields.io/badge/platform-Android-yellow.svg)](https://www.android.com)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+![plugpag-wrapper](https://img.shields.io/badge/plugpag--wrapper-1.33.0-81d742.svg)
 
 ## Features
 
